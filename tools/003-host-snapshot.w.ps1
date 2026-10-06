@@ -1,15 +1,15 @@
 <#
 .SYNOPSIS
-    Quick host snapshot - OS, uptime, interfaces, routes, DNS, listening ports
+    Quick host snapshot - OS, uptime, interfaces, routes, DNS servers in use
 
 .DESCRIPTION
-    Windows twin of 003-host-snapshot.lm.sh, with the same sections. Read-only
-    and runs without admin rights (without admin, some listening ports may
-    show no process name).
+    Windows version of 003-host-snapshot.lm.sh. Read-only and runs without
+    admin rights. The DNS section lists only the servers in use: connected
+    interfaces, IPv4 and IPv6, with the default-gateway interface first.
 
     Uses the built-in NetTCPIP / DnsClient cmdlets (Windows 8 / Server 2012
-    and newer) and falls back to ipconfig, route print and netstat on older
-    systems. A section that fails prints why and the rest still run.
+    and newer) and falls back to ipconfig and route print on older systems.
+    A section that fails prints why and the rest still run.
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File .\003-host-snapshot.w.ps1
@@ -89,25 +89,34 @@ $report = @(
         }
     }
 
-    Section 'DNS' {
+    Section 'DNS SERVERS IN USE' {
         if ($Modern) {
-            Get-DnsClientServerAddress -AddressFamily IPv4 | Where-Object { $_.ServerAddresses } |
-                Format-Table InterfaceAlias, @{ n = 'DnsServers'; e = { $_.ServerAddresses -join ', ' } } -AutoSize
+            # Connected interfaces only. Windows puts fec0:0:0:ffff::1-3 on adapters with
+            # no IPv6 DNS configured; those are placeholders, not real servers.
+            $inUse = Get-NetIPConfiguration |
+                Where-Object { $_.NetAdapter.Status -eq 'Up' } |
+                ForEach-Object {
+                    $cfg = $_
+                    $servers = @($cfg.DNSServer.ServerAddresses |
+                        Where-Object { $_ -notlike 'fec0:0:0:ffff::*' } | Select-Object -Unique)
+                    if ($servers) {
+                        [pscustomobject]@{
+                            Interface      = $cfg.InterfaceAlias
+                            DefaultGateway = (@($cfg.IPv4DefaultGateway.NextHop) + @($cfg.IPv6DefaultGateway.NextHop) |
+                                                Where-Object { $_ } | Select-Object -Unique) -join ', '
+                            DnsServers     = $servers -join ', '
+                        }
+                    }
+                }
+            if ($inUse) {
+                # Normal lookups follow the default route, so that interface goes first
+                $inUse | Sort-Object { -not $_.DefaultGateway }, Interface | Format-Table -AutoSize -Wrap
+            } else {
+                '  (no connected interface has DNS servers configured)'
+            }
             'Search suffixes: ' + ((Get-DnsClientGlobalSetting).SuffixSearchList -join ', ')
         } else {
             ipconfig /all | Select-String 'DNS'
-        }
-    }
-
-    Section 'LISTENING TCP' {
-        if ($Modern) {
-            $procs = @{}
-            Get-Process | ForEach-Object { $procs[$_.Id] = $_.ProcessName }
-            Get-NetTCPConnection -State Listen | Sort-Object LocalPort, LocalAddress |
-                Format-Table LocalAddress, LocalPort, OwningProcess,
-                    @{ n = 'Process'; e = { $procs[[int]$_.OwningProcess] } } -AutoSize
-        } else {
-            netstat -ano | Select-String 'LISTENING'
         }
     }
 )
