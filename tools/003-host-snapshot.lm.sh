@@ -11,7 +11,7 @@
 set -uo pipefail   # no -e: a missing command in one section shouldn't stop the rest
 # Note: case patterns inside $( ... ) use the (pattern) form; bash 3.2 (macOS) misparses pattern) there.
 
-VERSION="1.0.0"   # bump on every change: MAJOR.MINOR.PATCH (see CLAUDE.md)
+VERSION="1.0.1"   # bump on every change: MAJOR.MINOR.PATCH (see CLAUDE.md)
 TOOL_NAME="$(basename "$0")"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TOOL_ID="$(basename "$0" | cut -d- -f1)"
@@ -234,7 +234,7 @@ EOF
 
 host_info() {
   section "HOST"
-  local domain boot now up
+  local domain="" boot now up
   if [ "$OS" = Darwin ]; then
     domain=$(dsconfigad -show 2>/dev/null | awk -F'= ' '/Active Directory Domain/ {print $2}')
     boot=$(sysctl -n kern.boottime | sed 's/^{ sec = \([0-9]*\).*/\1/')
@@ -309,7 +309,7 @@ routes() {
 
 dns_in_use() {
   section "DNS SERVERS IN USE"
-  local rows search dev servers gw key
+  local rows="" search="" dev servers gw key
   if [ "$OS" = Darwin ]; then
     # Per-interface resolvers ("scoped queries") only exist for active interfaces
     rows=$(scutil --dns | awk '
