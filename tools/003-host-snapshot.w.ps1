@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Quick host snapshot - current IP, Ethernet/Wi-Fi MAC with adapter model and driver, OS, uptime, interfaces, DNS servers in use, optional routes
+    Quick host snapshot - current IP, Ethernet/Wi-Fi MAC with adapter model and driver, OS, uptime, DNS servers in use, optional interfaces and routes
 
 .DESCRIPTION
     Windows version of 003-host-snapshot.lm.sh. Read-only and runs without
@@ -8,7 +8,10 @@
     Wi-Fi MAC addresses, each with the adapter model (e.g. Intel Wi-Fi 6E
     AX211, Intel I219-LM) and driver version and date. The DNS section lists
     only the servers in use: connected interfaces, IPv4 and IPv6, with the
-    default-gateway interface first. The routing table is only shown with -Routes.
+    default-gateway interface first.
+
+    The full adapter / IP address tables and the routing table are long, so
+    they are only shown with -Interfaces and -Routes.
 
     Uses the built-in NetTCPIP / DnsClient cmdlets (Windows 8 / Server 2012
     and newer) and falls back to ipconfig and route print on older systems.
@@ -21,7 +24,7 @@
     powershell -ExecutionPolicy Bypass -File .\003-host-snapshot.w.ps1 -Out
 
 .EXAMPLE
-    powershell -ExecutionPolicy Bypass -File .\003-host-snapshot.w.ps1 -Routes
+    powershell -ExecutionPolicy Bypass -File .\003-host-snapshot.w.ps1 -Interfaces -Routes
 
 .NOTES
     Category: sys
@@ -30,11 +33,12 @@
 [CmdletBinding()]
 param(
     [Alias('o')][switch]$Out,   # also save the snapshot to .\output\ (alias needed: -OutVariable/-OutBuffer make -o ambiguous)
+    [Alias('i')][switch]$Interfaces,   # include all adapters and IP addresses (alias needed: -Information* make -i ambiguous)
     [switch]$Routes,   # include the IPv4 routing table (long, so off by default)
     [switch]$Version   # print the version and exit
 )
 
-$ToolVersion = '1.0.0'   # bump on every change: MAJOR.MINOR.PATCH (see CLAUDE.md)
+$ToolVersion = '1.1.0'   # bump on every change: MAJOR.MINOR.PATCH (see CLAUDE.md)
 $ToolName    = Split-Path -Leaf $PSCommandPath
 if ($Version) { "$ToolName v$ToolVersion"; return }
 Write-Host "$ToolName v$ToolVersion"   # host stream, so pipeline output stays clean
@@ -54,6 +58,7 @@ function Section([string]$Title, [scriptblock]$Body) {
     }
 }
 
+$hidden = @()   # optional sections left out, for the hint at the end
 $report = @(
     Section 'IP AND MAC' {
         function Row([string]$Label, $Values) {
@@ -121,16 +126,20 @@ $report = @(
         } | Format-List
     }
 
-    Section 'INTERFACES' {
-        if ($Modern) {
-            Get-NetAdapter | Sort-Object ifIndex |
-                Format-Table Name, InterfaceDescription, Status, LinkSpeed, MacAddress -AutoSize
-            Get-NetIPAddress | Where-Object { $_.AddressState -ne 'Invalid' } |
-                Sort-Object InterfaceIndex, AddressFamily |
-                Format-Table InterfaceAlias, AddressFamily, IPAddress, PrefixLength, PrefixOrigin -AutoSize
-        } else {
-            ipconfig /all
+    if ($Interfaces) {
+        Section 'INTERFACES' {
+            if ($Modern) {
+                Get-NetAdapter | Sort-Object ifIndex |
+                    Format-Table Name, InterfaceDescription, Status, LinkSpeed, MacAddress -AutoSize
+                Get-NetIPAddress | Where-Object { $_.AddressState -ne 'Invalid' } |
+                    Sort-Object InterfaceIndex, AddressFamily |
+                    Format-Table InterfaceAlias, AddressFamily, IPAddress, PrefixLength, PrefixOrigin -AutoSize
+            } else {
+                ipconfig /all
+            }
         }
+    } else {
+        $hidden += '-Interfaces (all adapters and IP addresses)'
     }
 
     if ($Routes) {
@@ -143,7 +152,7 @@ $report = @(
             }
         }
     } else {
-        "`n(routing table hidden - add -Routes to show it)"
+        $hidden += '-Routes (routing table)'
     }
 
     Section 'DNS SERVERS IN USE' {
@@ -177,6 +186,8 @@ $report = @(
         }
     }
 )
+
+if ($hidden) { $report += "`n(more detail available: add $($hidden -join ', '))" }
 
 $report
 
