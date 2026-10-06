@@ -15,8 +15,14 @@
 #>
 [CmdletBinding()]
 param(
-    [switch]$Out   # also save results to .\output\
+    [switch]$Out,      # also save results to .\output\
+    [switch]$Version   # print the version and exit
 )
+
+$ToolVersion = '1.0.0'   # bump on every change: MAJOR.MINOR.PATCH (see CLAUDE.md)
+$ToolName    = Split-Path -Leaf $PSCommandPath
+if ($Version) { "$ToolName v$ToolVersion"; return }
+Write-Host "$ToolName v$ToolVersion"   # host stream, so pipeline / CSV output stays clean
 
 $ErrorActionPreference = 'Stop'
 $ToolId    = ((Split-Path -Leaf $PSCommandPath) -split '-')[0]   # e.g. 001

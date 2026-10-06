@@ -17,6 +17,8 @@ import pathlib
 import socket
 import sys
 
+VERSION = "1.0.0"  # bump on every change: MAJOR.MINOR.PATCH (see CLAUDE.md)
+TOOL_NAME = pathlib.Path(__file__).name
 TOOL_ID = pathlib.Path(__file__).stem.split("-")[0]  # e.g. "001"
 OUTPUT_DIR = pathlib.Path(__file__).resolve().parent.parent / "output"
 
@@ -31,7 +33,10 @@ def output_path(ext: str = "txt") -> pathlib.Path:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.strip().splitlines()[0])
     parser.add_argument("--out", action="store_true", help="also save results to ./output/")
+    parser.add_argument("--version", action="version", version=f"{TOOL_NAME} v{VERSION}")
     args = parser.parse_args()
+    banner = f"{TOOL_NAME} v{VERSION}"
+    print(banner, file=sys.stderr)  # stderr, so piped / redirected output stays clean
 
     results = ["replace me"]
 
@@ -39,7 +44,7 @@ def main() -> int:
         print(line)
     if args.out:
         path = output_path()
-        path.write_text("\n".join(results) + "\n")
+        path.write_text("\n".join([banner] + results) + "\n")
         print(f"[+] saved {path}", file=sys.stderr)
     return 0
 

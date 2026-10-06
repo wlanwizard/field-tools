@@ -84,6 +84,15 @@ Start from the matching file in `templates/` and keep its structure:
 - **Header** (`catalog.py` reads it): `Synopsis:` (one line, appears in the README),
   `Category:`, `Requires:`, `Usage:`.
   PowerShell puts the synopsis under `.SYNOPSIS` and `Category`/`Requires` under `.NOTES`.
+- **Version**: a version constant right after the header, which is the only place the
+  version is stored: `VERSION = "1.0.0"` (Python), `VERSION="1.0.0"` (bash),
+  `$ToolVersion = '1.0.0'` (PowerShell). At runtime:
+  - Every run starts by printing `<tool-file> v<version>`. Print it to **stderr** in Python
+    and bash, and with **`Write-Host`** in PowerShell, so it never ends up in piped,
+    redirected or CSV output.
+  - Text and HTML reports saved with `--out` start with the same line. CSV files don't,
+    so their columns stay clean.
+  - `--version` (Python), `-V` (bash) and `-Version` (PowerShell) print the version and exit.
 - **Help**: `--help` / `-h` / `Get-Help` must work and show at least one realistic example.
 - **Output**: readable table on screen by default. A `--out` / `-o` / `-Out` flag also
   writes `output/<NNN>_<hostname>_<yyyymmdd-HHmmss>.<ext>` at the repo root
@@ -104,12 +113,22 @@ Start from the matching file in `templates/` and keep its structure:
    (Windows-only or needs a real target), say plainly what wasn't tested.
 3. `bash -n` for shell scripts and `python3 -m py_compile` for Python.
 4. `chmod +x` on `.py` and `.sh`.
-5. `python3 catalog.py` exits 0 and the README catalog shows the tool.
-6. Don't commit unless asked.
+5. Version set: `1.0.0` for a new tool, bumped for a changed one (see below).
+6. `python3 catalog.py` exits 0 and the README catalog shows the tool.
+7. Don't commit unless asked. Commit subjects for tool changes include the new version, e.g.
+   `003-host-snapshot.w.ps1 v1.1.0: add IP and MAC section`.
 
 ## Changing or retiring tools
 
 - Fix a tool in place. If a change breaks existing flags or output columns, call it out.
+- **Bump the version on every change**, using `MAJOR.MINOR.PATCH`:
+  - **PATCH** (1.0.0 → 1.0.1): bug fixes, wording, no change to flags or output.
+  - **MINOR** (1.0.1 → 1.1.0): new sections, checks, columns or optional flags. Existing use keeps working.
+  - **MAJOR** (1.1.0 → 2.0.0): a flag removed or renamed, output columns changed or removed,
+    or anything else that breaks how people already run it.
+- Each language version of a tool has its own version number.
+- Tools written before versioning existed have no version. Don't add one on your own.
+  Add one (starting at `1.0.0`) only when that tool is next changed.
 - To retire a tool, `git mv` it into `_retired/` (same filename) and rerun `catalog.py`.
   Its number stays taken.
 
