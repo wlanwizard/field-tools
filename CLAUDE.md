@@ -50,7 +50,7 @@ is one self-contained file** that still works when copied out of the repo by its
 ## Naming and placement
 
 ```
-tools/<NNN>-<verb-noun>.<ext>      e.g. tools/004-dhcp-scope-usage.ps1
+tools/<NNN>-<verb-noun>.<platforms>.<ext>      e.g. tools/004-dhcp-scope-usage.w.ps1
 ```
 
 - **All tools go in `tools/`**, with no subfolders. The number is how people find a tool
@@ -59,10 +59,15 @@ tools/<NNN>-<verb-noun>.<ext>      e.g. tools/004-dhcp-scope-usage.ps1
   `python3 catalog.py` prints (it checks both `tools/` and `_retired/`). Numbers are
   never reused or renumbered.
 - **Same tool, another language** = same number and name, different extension
-  (`002-port-check.py` + `002-port-check.ps1`). Both versions take the same inputs
+  (`002-port-check.lmw.py` + `002-port-check.w.ps1`). Both versions take the same inputs
   and produce the same output columns.
 - **verb-noun**: lowercase and hyphenated, describing what the tool does (`port-check`,
   `ad-stale-computers`, `wlan-profile-export`).
+- **platforms**: the platforms that file has actually been written for: `l` Linux,
+  `m` macOS, `w` Windows, always in `lmw` order and at least one. Only claim a platform
+  the code really handles (e.g. a `.sh` that uses `ip` only is `l`, not `lm`). Different
+  language versions of one tool can have different tags (`.lmw.py`, `.w.ps1`). This tag
+  is the only record of supported platforms. There is no `Platform:` header line.
 - **Category**: a `Category:` header line (`net`, `sys`, `ident`, `sec`, `cloud`,
   `util`). It only decides which README section the tool is listed in. The list
   lives in `CATEGORIES` in `catalog.py`. Ask before adding a category, and if one is
@@ -77,8 +82,8 @@ host work → `.sh`. Cross-platform network or API work → `.py`.
 Start from the matching file in `templates/` and keep its structure:
 
 - **Header** (`catalog.py` reads it): `Synopsis:` (one line, appears in the README),
-  `Category:`, `Platform:` (`any` or a comma list of `win`, `mac`, `linux`), `Requires:`, `Usage:`.
-  PowerShell puts the synopsis under `.SYNOPSIS` and `Category`/`Platform`/`Requires` under `.NOTES`.
+  `Category:`, `Requires:`, `Usage:`.
+  PowerShell puts the synopsis under `.SYNOPSIS` and `Category`/`Requires` under `.NOTES`.
 - **Help**: `--help` / `-h` / `Get-Help` must work and show at least one realistic example.
 - **Output**: readable table on screen by default. A `--out` / `-o` / `-Out` flag also
   writes `output/<NNN>_<hostname>_<yyyymmdd-HHmmss>.<ext>` at the repo root
@@ -93,7 +98,7 @@ Start from the matching file in `templates/` and keep its structure:
 
 ## Definition of done
 
-1. File named correctly and placed in `tools/`, header filled in (no template placeholder text left).
+1. File named correctly (including the platform tag) and placed in `tools/`, header filled in (no template placeholder text left).
 2. Run it locally wherever possible (this Mac has python3 and bash; no pwsh).
    Test `--help`, a normal run, and a failure case. If the tool can't run here
    (Windows-only or needs a real target), say plainly what wasn't tested.

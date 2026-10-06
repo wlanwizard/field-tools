@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # Synopsis: One line describing what this tool does (shows in the README catalog)
 # Category: net | sys | ident | sec | cloud | util
-# Platform: mac, linux
 # Requires: bash 3.2+ (macOS default)
-# Usage:    ./NNN-verb-noun.sh [-o] [-h]
+# Usage:    ./NNN-verb-noun.lm.sh [-o] [-h]
 #
 # Rules: read-only by default, no installs, results go to ./output/.
 set -euo pipefail
@@ -13,7 +12,7 @@ TOOL_ID="$(basename "$0" | cut -d- -f1)"            # e.g. 001
 OUTPUT_DIR="$SCRIPT_DIR/../output"
 SAVE=0
 
-usage() { sed -n 's/^# \{0,1\}//; 2,6p' "$0"; exit "${1:-0}"; }
+usage() { sed -n 's/^# \{0,1\}//; 2,5p' "$0"; exit "${1:-0}"; }
 
 while getopts "oh" opt; do
   case "$opt" in

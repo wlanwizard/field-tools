@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # Synopsis: TCP connect test to one or more host:port targets (firewall / ACL validation)
 # Category: net
-# Platform: any
 # Requires: python3 (stdlib only)
-# Usage:    python3 002-port-check.py 10.0.0.1:443 dc01:389 -t 2 --out
+# Usage:    python3 002-port-check.lmw.py 10.0.0.1:443 dc01:389 -t 2 --out
 """
 TCP connect test to one or more host:port targets.
 

@@ -7,11 +7,10 @@
     results go to .\output\.
 
 .EXAMPLE
-    powershell -ExecutionPolicy Bypass -File .\NNN-verb-noun.ps1 -Out
+    powershell -ExecutionPolicy Bypass -File .\NNN-verb-noun.w.ps1 -Out
 
 .NOTES
     Category: net | sys | ident | sec | cloud | util
-    Platform: win
     Requires: Windows PowerShell 5.1+ (no extra modules)
 #>
 [CmdletBinding()]

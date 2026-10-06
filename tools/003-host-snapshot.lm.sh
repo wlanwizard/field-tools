@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # Synopsis: Quick host snapshot - OS, uptime, interfaces, routes, DNS, listening ports
 # Category: sys
-# Platform: mac, linux
 # Requires: bash 3.2+ (macOS default); uses whatever of ip/ifconfig/netstat/ss exists
-# Usage:    ./003-host-snapshot.sh [-o] [-h]
+# Usage:    ./003-host-snapshot.lm.sh [-o] [-h]
 #
 # Rules: read-only by default, no installs, results go to ./output/.
 set -uo pipefail   # no -e: a missing command in one section shouldn't stop the rest
@@ -13,7 +12,7 @@ TOOL_ID="$(basename "$0" | cut -d- -f1)"
 OUTPUT_DIR="$SCRIPT_DIR/../output"
 SAVE=0
 
-usage() { sed -n 's/^# \{0,1\}//; 2,6p' "$0"; exit "${1:-0}"; }
+usage() { sed -n 's/^# \{0,1\}//; 2,5p' "$0"; exit "${1:-0}"; }
 
 while getopts "oh" opt; do
   case "$opt" in

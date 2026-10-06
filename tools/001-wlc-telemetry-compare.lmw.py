@@ -5,22 +5,21 @@
 # ///
 # Synopsis: Diff a working vs broken Catalyst 9800 show tech to find why Catalyst Center telemetry fails
 # Category: net
-# Platform: any
 # Requires: uv (preferred) or python3 3.8+; stdlib only, offline, reads two text files
-# Usage:    uv run 001-wlc-telemetry-compare.py WORKING.txt BROKEN.txt [--full] [--out] [--save report.html]
+# Usage:    uv run 001-wlc-telemetry-compare.lmw.py WORKING.txt BROKEN.txt [--full] [--out] [--save report.html]
 """
 Compare two Catalyst 9800 'show tech wireless' outputs (one with working
 Catalyst Center telemetry, one broken) and highlight config/state differences
 that commonly break WLC -> Catalyst Center Assurance telemetry.
 
 Usage:
-    uv run 001-wlc-telemetry-compare.py WORKING.txt BROKEN.txt
-    uv run 001-wlc-telemetry-compare.py WORKING.txt BROKEN.txt --full       # also full running-config diff
-    uv run 001-wlc-telemetry-compare.py WORKING.txt BROKEN.txt --out        # save report to ./output/
-    uv run 001-wlc-telemetry-compare.py WORKING.txt BROKEN.txt --save report.html
-    ./001-wlc-telemetry-compare.py WORKING.txt BROKEN.txt                  # mac/linux, via the uv shebang
+    uv run 001-wlc-telemetry-compare.lmw.py WORKING.txt BROKEN.txt
+    uv run 001-wlc-telemetry-compare.lmw.py WORKING.txt BROKEN.txt --full       # also full running-config diff
+    uv run 001-wlc-telemetry-compare.lmw.py WORKING.txt BROKEN.txt --out        # save report to ./output/
+    uv run 001-wlc-telemetry-compare.lmw.py WORKING.txt BROKEN.txt --save report.html
+    ./001-wlc-telemetry-compare.lmw.py WORKING.txt BROKEN.txt                  # mac/linux, via the uv shebang
 
-No uv on the machine? 'python3 001-wlc-telemetry-compare.py ...' works the same.
+No uv on the machine? 'python3 001-wlc-telemetry-compare.lmw.py ...' works the same.
 
 Each input can be a full 'show tech wireless' or just a 'show running-config'.
 Read-only and offline: nothing connects to the WLCs.

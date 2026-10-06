@@ -5,9 +5,10 @@ Rebuild the tool catalog in README.md from the header of every tool.
     python3 catalog.py           # rewrite README.md between the CATALOG markers
     python3 catalog.py --check   # exit 1 if README.md is out of date (for CI / pre-commit)
 
-A tool's row comes from its filename (tools/<NNN>-<verb-noun>.<ext>) and the
-"Synopsis:" / "Category:" / "Platform:" lines in its header (or .SYNOPSIS for
-PowerShell). Files sharing an ID (002-port-check.py + .ps1) are one row.
+A tool's row comes from its filename, tools/<NNN>-<verb-noun>.<platforms>.<ext>
+(platforms = any of l/m/w in that order, e.g. 002-port-check.lmw.py), plus the
+"Synopsis:" / "Category:" lines in its header (or .SYNOPSIS for PowerShell).
+Files sharing an ID (002-port-check.lmw.py + 002-port-check.w.ps1) are one row.
 """
 import pathlib
 import re
@@ -29,7 +30,9 @@ CATEGORIES = {
     "util": "Utilities",
 }
 EXTS = {".py": "py", ".sh": "sh", ".ps1": "ps1"}
-NAME_RE = re.compile(r"^(\d{3})-([a-z0-9]+(?:-[a-z0-9]+)*)$")
+PLATFORMS = {"l": "Linux", "m": "macOS", "w": "Windows"}
+# NNN-verb-noun.<l?m?w?>.<ext>
+NAME_RE = re.compile(r"^(\d{3})-([a-z0-9]+(?:-[a-z0-9]+)*)\.(l?m?w?)\.(py|sh|ps1)$")
 
 
 def header_field(lines: list, field: str) -> str:
@@ -48,11 +51,11 @@ def scan() -> tuple:
         if f.suffix not in EXTS:
             continue
         rel = f.relative_to(ROOT).as_posix()
-        m = NAME_RE.match(f.stem)
-        if not m:
-            problems.append(f"{rel}: name must be NNN-verb-noun{f.suffix}")
+        m = NAME_RE.match(f.name)
+        if not m or not m.group(3):
+            problems.append(f"{rel}: name must be NNN-verb-noun.<l|m|w tags>{f.suffix}, e.g. 004-dns-check.lmw{f.suffix}")
             continue
-        tool_id, name = m.groups()
+        tool_id, name, plat = m.group(1), m.group(2), m.group(3)
         lines = f.read_text(errors="replace").splitlines()[:40]
         synopsis = header_field(lines, "Synopsis")
         category = header_field(lines, "Category")
@@ -67,11 +70,10 @@ def scan() -> tuple:
             problems.append(f"{rel}: Synopsis still has the template placeholder")
         t["files"].append(f)
         t["synopsis"] = t["synopsis"] or synopsis
-        plat = header_field(lines, "Platform")
-        t["platform"].update(p.strip() for p in plat.split(",") if p.strip())
+        t["platform"].update(plat)
 
     for f in RETIRED.glob("*"):
-        m = NAME_RE.match(f.stem)
+        m = NAME_RE.match(f.name)
         if m and m.group(1) in tools:
             problems.append(f"ID {m.group(1)} is retired ({f.name}) but reused in tools/")
     return tools, problems
@@ -84,14 +86,14 @@ def render(tools: dict) -> str:
         if not rows:
             continue
         out.append(f"### {title}\n")
-        out.append("| ID | Tool | Lang | Platform | Description |")
-        out.append("|----|------|------|----------|-------------|")
+        out.append("| ID | Tool | Files (platforms.lang) | Runs on | Description |")
+        out.append("|----|------|------------------------|---------|-------------|")
         for tool_id in sorted(rows):
             t = rows[tool_id]
             langs = " ".join(
-                f"[{EXTS[f.suffix]}]({f.relative_to(ROOT).as_posix()})" for f in sorted(t["files"])
+                f"[{f.name.split('.', 1)[1]}]({f.relative_to(ROOT).as_posix()})" for f in sorted(t["files"])
             )
-            plat = ", ".join(sorted(t["platform"])) or "?"
+            plat = ", ".join(v for k, v in PLATFORMS.items() if k in t["platform"])
             out.append(f"| **{tool_id}** | {t['name']} | {langs} | {plat} | {t['synopsis'] or '-'} |")
         out.append("")
     if not out:
@@ -121,7 +123,7 @@ def main() -> int:
 
 def next_id(tools: dict) -> int:
     used = {int(k) for k in tools}
-    used |= {int(m.group(1)) for f in RETIRED.glob("*") if (m := NAME_RE.match(f.stem))}
+    used |= {int(m.group(1)) for f in RETIRED.glob("*") if (m := NAME_RE.match(f.name))}
     return max(used, default=0) + 1
 
 

@@ -10,10 +10,10 @@ Build a new tool that does: $ARGUMENTS
 2. Check whether a tool already does this or something close (look at the README
    catalog and `tools/`). If one does, suggest extending it or adding another
    language version under the same number instead of making a new tool.
-3. Choose the language, `verb-noun` name and Category. Get the next free number
+3. Choose the language, target platforms, `verb-noun` name and Category. Get the next free number
    from `python3 catalog.py` (it checks `tools/` and `_retired/`). If anything is unclear
    (target OS, read vs. write, what inputs it takes), ask before writing.
-4. Start from `templates/template.<ext>` and write the tool as `tools/<NNN>-<verb-noun>.<ext>`.
+4. Start from `templates/template.<ext>` and write the tool as `tools/<NNN>-<verb-noun>.<platforms>.<ext>` (platforms = `l`/`m`/`w`).
 5. Work through the Definition of Done in `CLAUDE.md`, including running
    `python3 catalog.py`.
 6. Report the file path, an example command line, and what was and wasn't tested.

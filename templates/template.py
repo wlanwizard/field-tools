@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # Synopsis: One line describing what this tool does (shows in the README catalog)
 # Category: net | sys | ident | sec | cloud | util
-# Platform: any
 # Requires: python3 (stdlib only)
-# Usage:    python3 NNN-verb-noun.py --help
+# Usage:    python3 NNN-verb-noun.lmw.py --help
 """
 Longer description, examples, and caveats go here.
 
