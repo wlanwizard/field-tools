@@ -15,7 +15,7 @@
 #>
 [CmdletBinding()]
 param(
-    [switch]$Out,      # also save results to .\output\
+    [Alias('o')][switch]$Out,   # also save results to .\output\ (alias needed: -OutVariable/-OutBuffer make -o ambiguous)
     [switch]$Version   # print the version and exit
 )
 

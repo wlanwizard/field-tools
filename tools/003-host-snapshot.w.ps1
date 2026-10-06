@@ -1,12 +1,14 @@
 <#
 .SYNOPSIS
-    Quick host snapshot - current IP, Ethernet/Wi-Fi MAC, OS, uptime, interfaces, routes, DNS servers in use
+    Quick host snapshot - current IP, Ethernet/Wi-Fi MAC with adapter model and driver, OS, uptime, interfaces, DNS servers in use, optional routes
 
 .DESCRIPTION
     Windows version of 003-host-snapshot.lm.sh. Read-only and runs without
     admin rights. Starts with the current IP address and the Ethernet and
-    Wi-Fi MAC addresses. The DNS section lists only the servers in use:
-    connected interfaces, IPv4 and IPv6, with the default-gateway interface first.
+    Wi-Fi MAC addresses, each with the adapter model (e.g. Intel Wi-Fi 6E
+    AX211, Intel I219-LM) and driver version and date. The DNS section lists
+    only the servers in use: connected interfaces, IPv4 and IPv6, with the
+    default-gateway interface first. The routing table is only shown with -Routes.
 
     Uses the built-in NetTCPIP / DnsClient cmdlets (Windows 8 / Server 2012
     and newer) and falls back to ipconfig and route print on older systems.
@@ -18,14 +20,24 @@
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File .\003-host-snapshot.w.ps1 -Out
 
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\003-host-snapshot.w.ps1 -Routes
+
 .NOTES
     Category: sys
     Requires: Windows PowerShell 5.1+ (no extra modules)
 #>
 [CmdletBinding()]
 param(
-    [switch]$Out   # also save the snapshot to .\output\
+    [Alias('o')][switch]$Out,   # also save the snapshot to .\output\ (alias needed: -OutVariable/-OutBuffer make -o ambiguous)
+    [switch]$Routes,   # include the IPv4 routing table (long, so off by default)
+    [switch]$Version   # print the version and exit
 )
+
+$ToolVersion = '1.0.0'   # bump on every change: MAJOR.MINOR.PATCH (see CLAUDE.md)
+$ToolName    = Split-Path -Leaf $PSCommandPath
+if ($Version) { "$ToolName v$ToolVersion"; return }
+Write-Host "$ToolName v$ToolVersion"   # host stream, so pipeline output stays clean
 
 $ErrorActionPreference = 'Stop'
 $ToolId    = ((Split-Path -Leaf $PSCommandPath) -split '-')[0]
@@ -65,8 +77,14 @@ $report = @(
                 }
             # Physical adapters only, so VPN / Hyper-V / virtual NICs don't show up. Wi-Fi shows
             # the MAC in use, which is a random one if "random hardware addresses" is on.
+            # InterfaceDescription is the driver's model name, e.g. "Intel(R) Wi-Fi 6E AX211 160MHz".
+            # Driver version/date come first in most Wi-Fi troubleshooting, so show them too.
             $nics = Get-NetAdapter -Physical | Sort-Object Name
-            $mac  = { param($n) '{0}  {1} ({2})' -f $n.MacAddress, $n.Name, $n.Status }
+            $mac  = { param($n)
+                '{0}  {1} ({2})' -f $n.MacAddress, $n.Name, $n.Status
+                '  {0}  driver {1}{2}' -f $n.InterfaceDescription, $n.DriverVersion,
+                    $(if ($n.DriverDate) { " ($($n.DriverDate))" } else { '' })
+            }
             Row 'Current IP'   $ips
             Row 'Ethernet MAC' ($nics | Where-Object { $_.PhysicalMediaType -eq '802.3' } | ForEach-Object { & $mac $_ })
             Row 'Wi-Fi MAC'    ($nics | Where-Object { $_.PhysicalMediaType -eq 'Native 802.11' } | ForEach-Object { & $mac $_ })
@@ -115,13 +133,17 @@ $report = @(
         }
     }
 
-    Section 'ROUTES' {
-        if ($Modern) {
-            Get-NetRoute -AddressFamily IPv4 | Sort-Object DestinationPrefix |
-                Format-Table DestinationPrefix, NextHop, RouteMetric, InterfaceAlias -AutoSize
-        } else {
-            route print -4
+    if ($Routes) {
+        Section 'ROUTES' {
+            if ($Modern) {
+                Get-NetRoute -AddressFamily IPv4 | Sort-Object DestinationPrefix |
+                    Format-Table DestinationPrefix, NextHop, RouteMetric, InterfaceAlias -AutoSize
+            } else {
+                route print -4
+            }
         }
+    } else {
+        "`n(routing table hidden - add -Routes to show it)"
     }
 
     Section 'DNS SERVERS IN USE' {
@@ -161,6 +183,6 @@ $report
 if ($Out) {
     New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
     $path = Join-Path $OutputDir ("{0}_{1}_{2}.txt" -f $ToolId, $env:COMPUTERNAME, (Get-Date -Format 'yyyyMMdd-HHmmss'))
-    $report | Set-Content -Path $path -Encoding UTF8
+    @("$ToolName v$ToolVersion") + $report | Set-Content -Path $path -Encoding UTF8
     Write-Host "[+] saved $path"
 }
