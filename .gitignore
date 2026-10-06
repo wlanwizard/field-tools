@@ -1,0 +1,18 @@
+# Tool output stays on the customer's machine - never commit it
+output/*
+!output/.gitkeep
+*.log
+*.pcap
+*.pcapng
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Claude Code per-user settings
+.claude/settings.local.json
