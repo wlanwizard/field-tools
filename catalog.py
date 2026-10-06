@@ -7,7 +7,7 @@ Rebuild the tool catalog in README.md from the header of every tool.
 
 A tool's row comes from its filename (tools/<NNN>-<verb-noun>.<ext>) and the
 "Synopsis:" / "Category:" / "Platform:" lines in its header (or .SYNOPSIS for
-PowerShell). Files sharing an ID (001-port-check.py + .ps1) are one row.
+PowerShell). Files sharing an ID (002-port-check.py + .ps1) are one row.
 """
 import pathlib
 import re

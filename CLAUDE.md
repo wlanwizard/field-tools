@@ -59,7 +59,7 @@ tools/<NNN>-<verb-noun>.<ext>      e.g. tools/004-dhcp-scope-usage.ps1
   `python3 catalog.py` prints (it checks both `tools/` and `_retired/`). Numbers are
   never reused or renumbered.
 - **Same tool, another language** = same number and name, different extension
-  (`001-port-check.py` + `001-port-check.ps1`). Both versions take the same inputs
+  (`002-port-check.py` + `002-port-check.ps1`). Both versions take the same inputs
   and produce the same output columns.
 - **verb-noun**: lowercase and hyphenated, describing what the tool does (`port-check`,
   `ad-stale-computers`, `wlan-profile-export`).

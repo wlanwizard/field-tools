@@ -3,7 +3,7 @@
 # Category: sys
 # Platform: mac, linux
 # Requires: bash 3.2+ (macOS default); uses whatever of ip/ifconfig/netstat/ss exists
-# Usage:    ./002-host-snapshot.sh [-o] [-h]
+# Usage:    ./003-host-snapshot.sh [-o] [-h]
 #
 # Rules: read-only by default, no installs, results go to ./output/.
 set -uo pipefail   # no -e: a missing command in one section shouldn't stop the rest

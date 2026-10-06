@@ -3,12 +3,12 @@
     TCP connect test to one or more host:port targets (firewall / ACL validation)
 
 .DESCRIPTION
-    PowerShell twin of 001-port-check.py for Windows boxes without Python.
+    PowerShell twin of 002-port-check.py for Windows boxes without Python.
     Faster than Test-NetConnection because it uses a short connect timeout.
     Read-only; sends no payload.
 
 .EXAMPLE
-    powershell -ExecutionPolicy Bypass -File .\001-port-check.ps1 10.0.0.1:443,dc01:389 -Out
+    powershell -ExecutionPolicy Bypass -File .\002-port-check.ps1 10.0.0.1:443,dc01:389 -Out
 
 .NOTES
     Category: net
