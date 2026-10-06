@@ -1,11 +1,12 @@
 <#
 .SYNOPSIS
-    Quick host snapshot - OS, uptime, interfaces, routes, DNS servers in use
+    Quick host snapshot - current IP, Ethernet/Wi-Fi MAC, OS, uptime, interfaces, routes, DNS servers in use
 
 .DESCRIPTION
     Windows version of 003-host-snapshot.lm.sh. Read-only and runs without
-    admin rights. The DNS section lists only the servers in use: connected
-    interfaces, IPv4 and IPv6, with the default-gateway interface first.
+    admin rights. Starts with the current IP address and the Ethernet and
+    Wi-Fi MAC addresses. The DNS section lists only the servers in use:
+    connected interfaces, IPv4 and IPv6, with the default-gateway interface first.
 
     Uses the built-in NetTCPIP / DnsClient cmdlets (Windows 8 / Server 2012
     and newer) and falls back to ipconfig and route print on older systems.
@@ -42,6 +43,40 @@ function Section([string]$Title, [scriptblock]$Body) {
 }
 
 $report = @(
+    Section 'IP AND MAC' {
+        function Row([string]$Label, $Values) {
+            $Values = @($Values | Where-Object { $_ })
+            if (-not $Values) { $Values = @('(none found)') }
+            '{0,-13}: {1}' -f $Label, $Values[0]
+            $Values | Select-Object -Skip 1 | ForEach-Object { '{0,-13}  {1}' -f '', $_ }
+        }
+        if ($Modern) {
+            # Connected IPv4 addresses; the interface with a default gateway is the one in use
+            $ips = Get-NetIPConfiguration |
+                Where-Object { $_.NetAdapter.Status -eq 'Up' -and $_.IPv4Address } |
+                Sort-Object { -not $_.IPv4DefaultGateway }, InterfaceAlias |
+                ForEach-Object {
+                    $cfg = $_
+                    $gw = @($cfg.IPv4DefaultGateway.NextHop) | Where-Object { $_ } | Select-Object -First 1
+                    foreach ($a in $cfg.IPv4Address) {
+                        '{0}/{1} on {2}{3}' -f $a.IPAddress, $a.PrefixLength, $cfg.InterfaceAlias,
+                            $(if ($gw) { " (gateway $gw)" } else { '' })
+                    }
+                }
+            # Physical adapters only, so VPN / Hyper-V / virtual NICs don't show up. Wi-Fi shows
+            # the MAC in use, which is a random one if "random hardware addresses" is on.
+            $nics = Get-NetAdapter -Physical | Sort-Object Name
+            $mac  = { param($n) '{0}  {1} ({2})' -f $n.MacAddress, $n.Name, $n.Status }
+            Row 'Current IP'   $ips
+            Row 'Ethernet MAC' ($nics | Where-Object { $_.PhysicalMediaType -eq '802.3' } | ForEach-Object { & $mac $_ })
+            Row 'Wi-Fi MAC'    ($nics | Where-Object { $_.PhysicalMediaType -eq 'Native 802.11' } | ForEach-Object { & $mac $_ })
+        } else {
+            Get-CimInstance Win32_NetworkAdapterConfiguration -Filter 'IPEnabled = TRUE' | ForEach-Object {
+                Row $_.Description @("IP  $($_.IPAddress -join ', ')", "MAC $($_.MACAddress)")
+            }
+        }
+    }
+
     Section 'HOST' {
         $os = Get-CimInstance Win32_OperatingSystem
         $cs = Get-CimInstance Win32_ComputerSystem
